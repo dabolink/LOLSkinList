@@ -5,12 +5,13 @@ def main():
 
     @connector.ready
     async def connect(connection):
+        # await getMissingChampionShards(connection)
         await listChampionInfo(connection)
 
 
     async def listChampionInfo(connection):
         champsNoSkins = await getChampionsWithNoSkins(connection)
-        items = await getLootInfo(connection)
+        items = await getLootInfo(connection , "SKIN")
         championIDs = await getChampionIDNameMap(connection)
 
         champSkinsAvailiable = dict()
@@ -25,12 +26,12 @@ def main():
         champsUnavailiable = [championIDs[champID] for champID in champsNoSkins if champID not in champSkinsAvailiable]
         print(f'not availiable:: {len(champsUnavailiable)} {champsUnavailiable}')
 
-    async def getLootInfo(connection):
+    async def getLootInfo(connection, type=""):
         summonerID = await getSummonerID(connection)
         championIDs = await getChampionIDNameMap(connection)
 
         lootItemsReq = await connection.request('get', '/lol-loot/v1/player-loot')
-        items = [loot for loot in (await lootItemsReq.json()) if loot["displayCategories"] == "SKIN"]
+        items = [loot for loot in (await lootItemsReq.json()) if loot["displayCategories"] == type or type == ""]
         return items
 
     async def getSummonerID(connection):
@@ -46,7 +47,20 @@ def main():
         champions = await championsReq.json()
         return {champ["id"]: champ['name'] for champ in sorted(champions, key=lambda item: item['name'])}
 
-        
+    async def getMissingChampionShards(connection):
+        summonerID = await getSummonerID(connection)
+        IDToName = await getChampionIDNameMap(connection)
+        nameToID = {v: k for k, v in IDToName.items()}
+        loot = await getLootInfo(connection, "CHAMPION")
+        championShardCount = {champ: 0 for champ in nameToID.keys()}
+        for l in loot:
+            if l["itemDesc"] not in championShardCount:
+                championShardCount[l["itemDesc"]] = l["count"]
+            else:
+                championShardCount[l["itemDesc"]] += l["count"]
+        print(f'0 Champ Shards :: ', [champ for champ, amount in championShardCount.items() if amount == 0])
+        print(f'< 2 Champ Shards :: ', [champ for champ, amount in championShardCount.items() if amount < 2])
+    
     async def getChampionsWithNoSkins(connection):
         summonerID = await getSummonerID(connection)
 
