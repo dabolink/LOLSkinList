@@ -27,9 +27,6 @@ def main():
         print(f'not availiable:: {len(champsUnavailiable)} {champsUnavailiable}')
 
     async def getLootInfo(connection, type=""):
-        summonerID = await getSummonerID(connection)
-        championIDs = await getChampionIDNameMap(connection)
-
         lootItemsReq = await connection.request('get', '/lol-loot/v1/player-loot')
         items = [loot for loot in (await lootItemsReq.json()) if loot["displayCategories"] == type or type == ""]
         return items
@@ -48,7 +45,6 @@ def main():
         return {champ["id"]: champ['name'] for champ in sorted(champions, key=lambda item: item['name'])}
 
     async def getMissingChampionShards(connection):
-        summonerID = await getSummonerID(connection)
         IDToName = await getChampionIDNameMap(connection)
         nameToID = {v: k for k, v in IDToName.items()}
         loot = await getLootInfo(connection, "CHAMPION")
