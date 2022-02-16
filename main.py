@@ -5,12 +5,12 @@ def main():
 
     @connector.ready
     async def connect(connection):
-        # await getMissingChampionShards(connection)
+        await getMissingChampionShards(connection)
         await listChampionInfo(connection)
 
 
     async def listChampionInfo(connection):
-        champsNoSkins = await getChampionsWithNoSkins(connection)
+        ownedSkins, champsNoSkins = await getChampionsWithNoSkins(connection)
         items = await getLootInfo(connection , "SKIN")
         championIDs = await getChampionIDNameMap(connection)
 
@@ -22,7 +22,12 @@ def main():
                         champSkinsAvailiable[champID].append(item["itemDesc"])
                     else:
                         champSkinsAvailiable[champID] = [item["itemDesc"]]
-        print(f'availiable:: {len(champSkinsAvailiable)} {champSkinsAvailiable}\n')
+        print(f'owned ::\n')
+        for id, skins in ownedSkins.items():
+            if len(skins) == 0:
+                continue
+            print(f'{len(skins)} {id} {skins}')
+        print(f'\navailiable:: {len(champSkinsAvailiable)} {champSkinsAvailiable}\n')
         champsUnavailiable = [championIDs[champID] for champID in champsNoSkins if champID not in champSkinsAvailiable]
         print(f'not availiable:: {len(champsUnavailiable)} {champsUnavailiable}')
 
@@ -82,7 +87,7 @@ def main():
         for champID in championSkinMap.keys():
             if(len(championSkinMap[champID]) > 0):
                 pass
-        return noSkins
+        return championSkinMap, noSkins
 
     connector.start()
 
